@@ -1,6 +1,9 @@
 # built application files
 *.apk
 *.ap_
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
 
 # files for the dex VM
 *.dex
@@ -38,3 +41,9 @@ build/
 
 # API keys and secrets
 src/main/res/values/secrets.xml
+
+libraries/
+
+app/build/
+
+app/src/main/jniLibs/
