@@ -10,9 +10,8 @@ import android.widget.ImageView;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.highgui.Highgui;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -23,6 +22,11 @@ public class MainActivity extends ActionBarActivity {
     private static final int MAX_UDP_DATAGRAM_LEN = 64000;
     private ImageView im;
     private Bitmap bm;
+
+    static {
+        System.loadLibrary("native_utils");
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +39,8 @@ public class MainActivity extends ActionBarActivity {
         Thread server_th = new Thread(new ServerThread());
         server_th.start();
     }
+
+    public native void decode_mat(byte[] compressed_buff, long matAddr, int size);
 
 
     @Override
@@ -69,7 +75,6 @@ public class MainActivity extends ActionBarActivity {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     socket.receive(packet);
-                    //Log.d("rbv", "frame size in bytes - " + packet.getLength());
                     Thread ui_update = new Thread(new UIUpdateThread(packet));
                     ui_update.start();
                 } catch (IOException e) {
@@ -85,18 +90,16 @@ public class MainActivity extends ActionBarActivity {
             this.packet = packet;
         }
         public void run() {
-            while (!Thread.currentThread().isInterrupted()) {
-                Mat frame = Highgui.imdecode(new MatOfByte(packet.getData()), 0);
-                bm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(frame, bm);
-                im.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        im.setImageBitmap(bm);
-                    }
-                });
-
-            }
+            Mat frame = Mat.zeros(216, 288, CvType.CV_8UC1);
+            frame.put(0,0, packet.getData());
+            bm = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(frame, bm);
+            im.post(new Runnable() {
+                @Override
+                public void run() {
+                    im.setImageBitmap(bm);
+                }
+            });
         }
     }
 }
